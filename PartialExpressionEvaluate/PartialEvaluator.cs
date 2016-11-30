@@ -5,6 +5,200 @@ using System.Reflection;
 
 namespace PartialExpressionEvaluate
 {
+    public class ExpressionEvaluator : ExpressionVisitor
+    {
+        public override Expression Visit(Expression node)
+        {
+            if (node != null)
+            {
+                switch (node.NodeType)
+                {                   
+                    //UnaryExpression, eval to self
+                    case ExpressionType.Convert:
+                    case ExpressionType.ConvertChecked:
+                        break;
+
+                    //UnaryExpression
+                    case ExpressionType.Negate:
+                    case ExpressionType.NegateChecked:
+                    case ExpressionType.Not:
+                    case ExpressionType.ArrayLength:
+                    case ExpressionType.Quote:
+                    case ExpressionType.TypeAs:
+                    case ExpressionType.Decrement:
+                    case ExpressionType.Increment:
+                    case ExpressionType.IsFalse:
+                    case ExpressionType.IsTrue:
+                    case ExpressionType.OnesComplement:
+                    case ExpressionType.Throw:
+                    case ExpressionType.UnaryPlus:
+                    case ExpressionType.Unbox:
+                        break;
+
+                    //BinaryExpression
+                    case ExpressionType.Add:
+                    case ExpressionType.AddChecked:
+                    case ExpressionType.AndAlso:
+                    case ExpressionType.And:
+                    case ExpressionType.Equal:
+                    case ExpressionType.ExclusiveOr:
+                    case ExpressionType.Divide:
+                    case ExpressionType.GreaterThan:
+                    case ExpressionType.GreaterThanOrEqual:
+                    case ExpressionType.LeftShift:
+                    case ExpressionType.Modulo:
+                    case ExpressionType.LessThan:
+                    case ExpressionType.LessThanOrEqual:
+                    case ExpressionType.Coalesce:
+                    case ExpressionType.Multiply:
+                    case ExpressionType.MultiplyChecked:
+                    case ExpressionType.NotEqual:
+                    case ExpressionType.Or:
+                    case ExpressionType.OrElse:
+                    case ExpressionType.Power:
+                    case ExpressionType.RightShift:
+                    case ExpressionType.Subtract:
+                    case ExpressionType.SubtractChecked:
+                        break;
+                    
+                    //BinaryExpression, assign
+                    case ExpressionType.AddAssign:
+                    case ExpressionType.AddAssignChecked:
+                    case ExpressionType.AndAssign:
+                    case ExpressionType.Assign:
+                    case ExpressionType.ExclusiveOrAssign:
+                    case ExpressionType.LeftShiftAssign:
+                    case ExpressionType.ModuloAssign:
+                    case ExpressionType.MultiplyAssign:
+                    case ExpressionType.MultiplyAssignChecked:
+                    case ExpressionType.OrAssign:
+                    case ExpressionType.PostDecrementAssign:
+                    case ExpressionType.PostIncrementAssign:
+                    case ExpressionType.PowerAssign:
+                    case ExpressionType.PreDecrementAssign:
+                    case ExpressionType.PreIncrementAssign:
+                    case ExpressionType.RightShiftAssign:
+                    case ExpressionType.SubtractAssign:
+                    case ExpressionType.SubtractAssignChecked:
+                    case ExpressionType.DivideAssign:
+                        break;
+
+                    //ConstantExpression
+                    case ExpressionType.Constant:
+                        break;
+
+                    //DefaultExpression
+                    case ExpressionType.Default:
+                        break;
+
+                    //BinaryExpression or MethodCallExpression
+                    case ExpressionType.ArrayIndex:
+                        break;
+                    
+                    //BlockExpression
+                    case ExpressionType.Block:
+                        break;
+                    
+                    //MethodCallExpression
+                    case ExpressionType.Call:
+                        break;
+                    
+                    //ConditionalExpression
+                    case ExpressionType.Conditional:
+                        break;
+                    
+                    //DebugInfoExpression
+                    case ExpressionType.DebugInfo:
+                        break;
+
+                    //DynamicExpression
+                    case ExpressionType.Dynamic:
+                        break;
+
+                    //??
+                    case ExpressionType.Extension:
+                        break;
+                    
+                    //GotoExpression
+                    case ExpressionType.Goto:
+                        break;
+
+                    //IndexExpression
+                    case ExpressionType.Index:
+                        break;
+                    
+                    //InvocationExpression
+                    case ExpressionType.Invoke:
+                        break;
+
+                    //LabelExpression
+                    case ExpressionType.Label:
+                        break;
+                    
+                    //LambdaExpression
+                    case ExpressionType.Lambda:
+                        break;
+                    
+                    //ListInitExpression
+                    case ExpressionType.ListInit:
+                        break;
+                    case ExpressionType.Loop:
+                        break;
+                    
+                    //MemberExpression
+                    case ExpressionType.MemberAccess:
+                        break;
+                    
+                    //MemberInitExpression
+                    case ExpressionType.MemberInit:
+                        break;
+                    
+                    //NewExpression
+                    case ExpressionType.New:
+                        break;
+                    
+                    //NewArrayExpression
+                    case ExpressionType.NewArrayBounds:
+                        break;
+                    
+                    //NewArrayExpression
+                    case ExpressionType.NewArrayInit:
+                        break;
+                    
+                    //ParameterExpression
+                    case ExpressionType.Parameter:
+                        break;
+                    
+                    //RunTimeVariablesExpression
+                    case ExpressionType.RuntimeVariables:
+                        break;
+
+                    //SwitchExpression
+                    case ExpressionType.Switch:
+                        break;
+                    
+                    //TryExpression
+                    case ExpressionType.Try:
+                        break;
+                    
+                    //TypeBinaryExpression
+                    case ExpressionType.TypeEqual:
+                    case ExpressionType.TypeIs:
+                        break;
+                }
+            }
+            return base.Visit(node);
+        }
+    }
+
+    public static class ExpressionHelper
+    {
+        public static Expression<Func<T>> Add<T>(Expression<Func<T>> p1, Expression<Func<T>> p2)
+        {
+            return Expression.Lambda(Expression.Add(p1.Body, p2.Body)) as Expression<Func<T>>;
+        }
+    }
+
     public class PartialEvaluationVisitor<T> : ExpressionVisitor
     {
         private readonly ParameterExpression p;
@@ -20,15 +214,23 @@ namespace PartialExpressionEvaluate
             if (exp == null) return null;
             switch (exp.NodeType)
             {
+                case ExpressionType.ConvertChecked:
+                case ExpressionType.Convert:
+                    return VisitUnary((UnaryExpression)exp);
                 case ExpressionType.Negate:
                 case ExpressionType.NegateChecked:
                 case ExpressionType.Not:
-                case ExpressionType.Convert:
-                case ExpressionType.ConvertChecked:
                 case ExpressionType.ArrayLength:
                 case ExpressionType.Quote:
                 case ExpressionType.TypeAs:
-                    return VisitUnary((UnaryExpression)exp);
+                    {
+                        var r = VisitUnary((UnaryExpression)exp) as UnaryExpression;
+                        if (r.Operand is ConstantExpression)
+                        {
+                            return Expression.Constant(Expression.Lambda(r).Compile().DynamicInvoke());
+                        }
+                        return r;
+                    }
                 case ExpressionType.Parameter:                    
                     return exp == p ?
                         Expression.Constant(t1) :
@@ -56,7 +258,14 @@ namespace PartialExpressionEvaluate
                 case ExpressionType.RightShift:
                 case ExpressionType.LeftShift:
                 case ExpressionType.ExclusiveOr:
-                    return VisitBinary((BinaryExpression)exp);
+                    {
+                        var r = VisitBinary((BinaryExpression)exp) as BinaryExpression;
+                        if (r.Left is ConstantExpression && r.Right is ConstantExpression)
+                        {
+                            return Expression.Constant(Expression.Lambda(r).Compile().DynamicInvoke());
+                        }
+                        return r;
+                    }
                 case ExpressionType.TypeIs:
                     return VisitTypeBinary((TypeBinaryExpression)exp);
                 case ExpressionType.Conditional:
@@ -96,5 +305,6 @@ namespace PartialExpressionEvaluate
             var vis = new PartialEvaluationVisitor<T1>(t1, expr.Parameters[0]);
             return Expression.Lambda(vis.Visit(expr.Body), expr.Parameters[1]) as Expression<Func<T2, R>>;
         }
+
     }
 }
