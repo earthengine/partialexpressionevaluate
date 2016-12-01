@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using PartialExpressionEvaluate;
+using PartialExpressionEvaluate.SimpleExpression;
 using System;
 using System.Linq.Expressions;
 
@@ -51,53 +52,32 @@ namespace TestPartialEvaluate
             Assert.That(r.Compile()(20), Is.EqualTo(2000));
         }
 
-        //private delegate T Loop<T>(Loop<T> l, T t);
-
-        //private Func<Func<T,T>,T> Y<T>()
-        //{
-        //    Func<Func<T, T>, Loop<T>> v = f => (Loop<T>)((l, t) => f(l(l, t)));
-            
-        //}
-
-        //private Expression<Func<string, int, Func<char,string,int,int>, int>> CheckDigit()
-        //{
-        //    return (s, start, c) =>            
-        //        s.Length < start ? -1 : (
-        //            s.Length == start ? 0 : (                        
-        //                s[start] >= '0' && s[start] <= '9' ?
-        //                    c(s[start], s, start + 1) : -1));
-        //}
-
-        //private Expression<Func<string, int, int>> SimpleInterpreter()
-        //{
-        //    var e1 = CheckDigit();
-        //    Expression<Loop<Tuple<char, string, int, int>>> e2 = (l2, t) => l2(c - '0', ss, st);
-        //    var s = Expression.Variable(typeof(string));
-        //    var start = Expression.Variable(typeof(int));
-        //    return Expression.Lambda(Expression.Invoke(e1, s, start, e2), s, start) as Expression<Func<string, int, int>>;
-
-        //}
-
-        private int SimpleInterpreter(int v, string s, int start)
-        {
-            if (s.Length < start) return -1;
-            if (s.Length == start) return v;
-            if (s[start] >= '0' && s[start] <= 9)
-            {
-                return SimpleInterpreter(v, s, start + 1);
-            } else if (s[start] == '+')
-            {
-                var r = SimpleInterpreter(s, start + 1);
-                if (r < 0) return -1;
-                return v + r;
-            } else return -1;
-        }
-
         [Test]
         public void Examine()
         {
             var r = PartialEvaluator.PartialEvaluate<int, int, int>((k, u) => k * (k * (k + 1) + u + 1) + u * u, 2);
             Assert.That(r.Compile()(20), Is.EqualTo(2 * (7 + 20) + 20 * 20));
+            var ex = PartialEvaluator.PartialEvaluateExp<int, int, int>();
+        }
+
+        delegate Func<T,T> Loop<T>(Loop<T> l);
+
+        public Expression<Func<Func<Func<T, T>, Func<T, T>>, Func<T, T>>> Y<T>()
+        {
+            return h => ((Loop<T>)(x => h(t => x(x)(t))))(x => h(x(x)));
+        }
+
+        [Test]
+        public void TestSimpleExpression()
+        {
+            Func<string, int> env = 
+                s => { if (s == "x") return 5; else if (s == "y") return 7; else throw new Exception(""); };
+
+            var exp = SimpleExpressions.OfAdd(SimpleExpressions.OfVar("x"), SimpleExpressions.OfMul(SimpleExpressions.OfNum(2),
+                SimpleExpressions.OfVar("y")));
+            var r = exp.Eval(env);
+
+            Assert.That(r, Is.EqualTo(19));
         }
     }
 }

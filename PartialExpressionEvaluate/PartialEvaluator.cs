@@ -199,6 +199,21 @@ namespace PartialExpressionEvaluate
         }
     }
 
+    public class DelegateEvaluationVisitor : ExpressionVisitor
+    {
+        private readonly Func<Expression, Expression> visit;
+
+        public DelegateEvaluationVisitor(Func<Expression, Expression> visit)
+        {
+            this.visit = visit;
+        }
+        public override Expression Visit(Expression node)
+        {
+            var r = base.Visit(node);
+            return visit(r);
+        }
+    }
+
     public class PartialEvaluationVisitor<T> : ExpressionVisitor
     {
         private readonly ParameterExpression p;
@@ -302,8 +317,61 @@ namespace PartialExpressionEvaluate
     {
         public static Expression<Func<T2, R>> PartialEvaluate<T1,T2,R>(Expression<Func<T1,T2,R>> expr, T1 t1)
         {
-            var vis = new PartialEvaluationVisitor<T1>(t1, expr.Parameters[0]);
+            var vis = new DelegateEvaluationVisitor(exp =>
+            {
+                return
+                    exp == null ? null : (
+                    exp.NodeType == ExpressionType.Parameter && exp == expr.Parameters[0] ?
+                                (exp == expr.Parameters[0] ? Expression.Constant(t1) : exp) : (
+                    new[] { ExpressionType.Negate, ExpressionType.NegateChecked, ExpressionType.Not,
+                            ExpressionType.ArrayLength, ExpressionType.Quote,
+                            ExpressionType.TypeAs}.Contains(exp.NodeType) ?
+                                ((exp as UnaryExpression).Operand is ConstantExpression ?
+                                    Expression.Constant(Expression.Lambda(exp).Compile().DynamicInvoke()) : exp) : (
+                    new[] { ExpressionType.Add,
+                            ExpressionType.AddChecked, ExpressionType.Subtract,
+                            ExpressionType.SubtractChecked, ExpressionType.Multiply,
+                            ExpressionType.MultiplyChecked, ExpressionType.Divide,
+                            ExpressionType.Modulo, ExpressionType.And, ExpressionType.AndAlso,
+                            ExpressionType.Or, ExpressionType.OrElse, ExpressionType.LessThan,
+                            ExpressionType.LessThanOrEqual, ExpressionType.GreaterThan,
+                            ExpressionType.GreaterThanOrEqual, ExpressionType.Equal,
+                            ExpressionType.NotEqual, ExpressionType.Coalesce,
+                            ExpressionType.ArrayIndex, ExpressionType.RightShift,
+                            ExpressionType.LeftShift, ExpressionType.ExclusiveOr }.Contains(exp.NodeType) ?
+                                        ((exp as BinaryExpression).Left is ConstantExpression
+                                            && (exp as BinaryExpression).Right is ConstantExpression ?
+                                                Expression.Constant(Expression.Lambda(exp).Compile().DynamicInvoke()) : exp) : exp)));
+            });
             return Expression.Lambda(vis.Visit(expr.Body), expr.Parameters[1]) as Expression<Func<T2, R>>;
+        }
+
+        public static Expression<Func<Expression<Func<T1, T2, R>>, T1, Expression<Func<T2,R>>>> PartialEvaluateExp<T1,T2,R>(){
+            return (expr, t1) =>
+                Expression.Lambda(new DelegateEvaluationVisitor(exp =>
+                        exp == null ? null : (
+                        exp.NodeType == ExpressionType.Parameter && exp == expr.Parameters[0] ?
+                                    (exp == expr.Parameters[0] ? Expression.Constant(t1) : exp) : (
+                        new[] { ExpressionType.Negate, ExpressionType.NegateChecked, ExpressionType.Not,
+                            ExpressionType.ArrayLength, ExpressionType.Quote,
+                            ExpressionType.TypeAs}.Contains(exp.NodeType) ?
+                                    ((exp as UnaryExpression).Operand is ConstantExpression ?
+                                        Expression.Constant(Expression.Lambda(exp).Compile().DynamicInvoke()) : exp) : (
+                        new[] { ExpressionType.Add,
+                            ExpressionType.AddChecked, ExpressionType.Subtract,
+                            ExpressionType.SubtractChecked, ExpressionType.Multiply,
+                            ExpressionType.MultiplyChecked, ExpressionType.Divide,
+                            ExpressionType.Modulo, ExpressionType.And, ExpressionType.AndAlso,
+                            ExpressionType.Or, ExpressionType.OrElse, ExpressionType.LessThan,
+                            ExpressionType.LessThanOrEqual, ExpressionType.GreaterThan,
+                            ExpressionType.GreaterThanOrEqual, ExpressionType.Equal,
+                            ExpressionType.NotEqual, ExpressionType.Coalesce,
+                            ExpressionType.ArrayIndex, ExpressionType.RightShift,
+                            ExpressionType.LeftShift, ExpressionType.ExclusiveOr }.Contains(exp.NodeType) ?
+                                            ((exp as BinaryExpression).Left is ConstantExpression
+                                                && (exp as BinaryExpression).Right is ConstantExpression ?
+                                                    Expression.Constant(Expression.Lambda(exp).Compile().DynamicInvoke()) : exp) : exp)))
+                ).Visit(expr.Body), expr.Parameters[1]) as Expression<Func<T2, R>>;
         }
 
     }
